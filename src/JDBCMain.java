@@ -48,6 +48,59 @@ public class JDBCMain {
         System.out.println("8.) Insert a new publisher and update all books");
         System.out.println("9.) Remove a specified book");
     }
+    
+    public static void showAllWritingGroupData(ResultSet rs) throws SQLException {
+        while (rs.next()) {
+            //Retrieve by column name
+            String groupName = rs.getString("GroupName");
+            String headWriter = rs.getString("HeadWriter");
+            int yearFormed = rs.getInt("YearFormed");
+            String subject = rs.getString("Subject");
+
+            //Display values
+            System.out.print("Group name: " + groupName + " ");
+            System.out.print("Head Writer: " + headWriter + " ");
+            System.out.print("Year Formed: " + yearFormed + " ");
+            System.out.print("Subject: " + subject);
+            System.out.println();
+        }
+    }
+    
+    public static void showAllPublishersData(ResultSet rs) throws SQLException {
+        while (rs.next()) {
+            //Retrieve by column name
+            String publisherName = rs.getString("PublisherName");
+            String publisherAddress = rs.getString("PublisherAddress");
+            String publisherPhone = rs.getString("PublisherPhone");
+            String publisherEmail = rs.getString("PublisherEmail");
+
+            //Display values
+            System.out.print("Publisher Name: " + publisherName + " ");
+            System.out.print("Publisher Address: " + publisherAddress + " ");
+            System.out.print("Publisher Phone: " + publisherPhone + " ");
+            System.out.print("Publisher Email: " + publisherEmail);
+            System.out.println();
+        }
+    }
+    
+    public static void showAllBooksData(ResultSet rs) throws SQLException {
+        while (rs.next()) {
+            //Retrieve by column name
+            String groupName = rs.getString("GroupName");
+            String bookTitle = rs.getString("BookTitle");
+            String publisherName = rs.getString("PublisherName");
+            int yearPublished = rs.getInt("YearPublished");
+            int numberPages = rs.getInt("NumberPages");
+
+            //Display values
+            System.out.print("Group name: " + groupName + " ");
+            System.out.print("Book Title: " + bookTitle + " ");
+            System.out.print("Publisher Name: " + publisherName + " ");
+            System.out.print("Year Published: " + yearPublished + " ");
+            System.out.print("Number of Pages: " + numberPages + " ");
+            System.out.println();
+        }
+    }
 
     public static void main(String[] args) {
         //Prompt the user for the database name, and the credentials.
@@ -77,53 +130,42 @@ public class JDBCMain {
             //STEP 3: Open a connection
             System.out.println("Connecting to database...");
             conn = DriverManager.getConnection(DB_URL);
-
-            //STEP 4: Execute a query
-//            System.out.println("Creating statement...");
-//            stmt = conn.createStatement();
-//            String sql;
-//            sql = "SELECT au_id, au_fname, au_lname, phone FROM Authors";
-//            ResultSet rs = stmt.executeQuery(sql);
             
             continues = 'a';
             
             while (continues != 'q') {
                 showMenu();
                 
+                String sql;
+                
                 System.out.print("Choose your number selection: ");
                 selection = in.nextInt();
                 
                 switch(selection) {
                     case(1):
-                        System.out.println("Creating statement...");
                         stmt = conn.createStatement();
-                        String sql;
                         sql = "SELECT * FROM WritingGroup";
                         rs = stmt.executeQuery(sql);
                         
-                        while (rs.next()) {
-                            //Retrieve by column name
-                            String groupName = rs.getString("GroupName");
-                            String headWriter = rs.getString("HeadWriter");
-                            String yearFormed = rs.getString("YearFormed");
-                            String subject = rs.getString("Subject");
-
-                            //Display values
-                            System.out.print("Group name: " + groupName + " ");
-                            System.out.print("Head Writer: " + headWriter + " ");
-                            System.out.print("Year Formed: " + yearFormed + " ");
-                            System.out.print("Subject: " + subject);
-                            System.out.println();
-                        }  
-            //STEP 6: Clean-up environment
+                        showAllWritingGroupData(rs);
                         break;
                     case(2):
                         break;
                     case(3):
+                        stmt = conn.createStatement();
+                        sql = "SELECT * FROM Publishers";
+                        rs = stmt.executeQuery(sql);
+                        
+                        showAllPublishersData(rs);
                         break;
                     case(4):
                         break;    
                     case(5):
+                        stmt = conn.createStatement();
+                        sql = "SELECT * FROM Books";
+                        rs = stmt.executeQuery(sql);
+                        
+                        showAllBooksData(rs);
                         break;
                     case(6):
                         break;  
@@ -136,26 +178,12 @@ public class JDBCMain {
                     default:
                         System.out.println("Invalid selection");
                             
-            }
+                }
                 
                 System.out.println("Press any key to continue or q to quit");
                 continues = in.next().charAt(0);
                 // ask for continues input again at very end of loop
             }
-
-            //STEP 5: Extract data from result set
-//            System.out.printf(displayFormat, "ID", "First Name", "Last Name", "Phone #");
-//            while (rs.next()) {
-//                //Retrieve by column name
-//                String id = rs.getString("au_id");
-//                String phone = rs.getString("phone");
-//                String first = rs.getString("au_fname");
-//                String last = rs.getString("au_lname");
-//
-//                //Display values
-//                System.out.printf(displayFormat,
-//                        dispNull(id), dispNull(first), dispNull(last), dispNull(phone));
-//            }
 //            //STEP 6: Clean-up environment
             rs.close();
             stmt.close();
