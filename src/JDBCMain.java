@@ -334,7 +334,7 @@ public class JDBCMain {
                         System.out.println();
                         sql = "SELECT * FROM WritingGroup "
                                 + "LEFT OUTER JOIN Books using (GroupName) "
-                                + "LEFT OUTER Publishers using (PublisherName) "
+                                + "LEFT OUTER JOIN Publishers using (PublisherName) "
                                 + "WHERE GroupName = ?";
                         pstmt = conn.prepareStatement(sql);
                         pstmt.clearParameters();
@@ -371,7 +371,7 @@ public class JDBCMain {
                         System.out.println();
                         sql = "SELECT * FROM Publishers "
                                 + "LEFT OUTER JOIN Books using (PublisherName) "
-                                + "LEFT OUTER WritingGroup using (GroupName) "
+                                + "LEFT OUTER JOIN WritingGroup using (GroupName) "
                                 + "WHERE PublisherName = ?";
                         pstmt = conn.prepareStatement(sql);
                         pstmt.clearParameters();
@@ -416,7 +416,7 @@ public class JDBCMain {
                         do {
                             rs = stmt.executeQuery(sql);
                             System.out.println();
-                            System.out.print("Please enter new Writing Group name: ");
+                            System.out.print("Please enter existing Writing Group name: ");
                             groupName = in.nextLine();
                             System.out.println("GroupName: " + groupName);
                             found = writingGroupFound(groupName, rs);
@@ -429,7 +429,7 @@ public class JDBCMain {
                         do {
                             rs = stmt.executeQuery(sql);
                             System.out.println();
-                            System.out.print("Please enter new Book Title: ");
+                            System.out.print("Please enter existing Book Title: ");
                             bookTitles = in.nextLine();
                             unique = existingBook(groupName, bookTitles, rs);
                         }
@@ -453,19 +453,21 @@ public class JDBCMain {
                        
                         String publisher;
                         
+                        // we want an existing GroupName bc a new book cannot be written by no one
                         stmt = conn.createStatement();
                         sql = "SELECT GroupName FROM WritingGroup";
  
                         do {
                             rs = stmt.executeQuery(sql);
                             System.out.println();
-                            System.out.print("Please enter new Writing Group name: ");
+                            System.out.print("Please enter existing Writing Group name: ");
                             groupName = in.nextLine();
                             System.out.println("GroupName: " + groupName);
                             found = writingGroupFound(groupName, rs);
                         }
                         while(found == false);      
                         
+                        //  thought we wanted an existing Publisher but can't have duplicates :(
                         stmt = conn.createStatement();
                         sql = "SELECT PublisherName FROM Publishers"; 
                         
@@ -526,6 +528,9 @@ public class JDBCMain {
                         
                         stmt = conn.createStatement();
                         sql = "SELECT PublisherName FROM Publishers"; 
+                        rs = stmt.executeQuery(sql);
+                        
+                        showAllPublisherNames(rs);
                         
                         // validate input to get an existing one
 
