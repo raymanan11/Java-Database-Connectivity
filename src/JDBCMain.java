@@ -2,6 +2,7 @@
 
 import java.sql.*;
 import java.util.Scanner;
+import java.util.*;
 
 /**
  *
@@ -58,6 +59,48 @@ public class JDBCMain {
         }
     }
     
+    public static boolean writingGroupFound(String writingGroup, ResultSet rs) throws SQLException {
+        boolean foundWritingGroup = false;
+        String groupName;
+        while (rs.next()) {
+            groupName = rs.getString("GroupName");
+            System.out.print(groupName + " ");
+            if (groupName.equals(writingGroup)) {
+                foundWritingGroup = true;
+                break;
+            }
+        }
+        return foundWritingGroup;
+    }
+    
+    public static boolean publisherFound(String publisherz, ResultSet rs) throws SQLException {
+        boolean foundPublisher = false;
+        String publisher;
+        while (rs.next()) {
+            publisher = rs.getString("PublisherName");
+            if (publisher.equals(publisherz)) {
+                foundPublisher = true;
+                break;
+            }
+        }
+        return foundPublisher;
+    }
+    
+    public static boolean existingBook(String groupName, String bookTitle, ResultSet rs) throws SQLException {
+        boolean uniqueBook = true;
+        String gName;
+        String bTitle;
+        while (rs.next()) {
+            gName = rs.getString("GroupName");
+            bTitle = rs.getString("BookTitle");
+            if (gName.equals(groupName) && bTitle.equals(bookTitle)) {
+                uniqueBook = false;
+                break;
+            }
+        }
+        return uniqueBook;
+    }
+    
     public static void showPublisherNames(ResultSet rs) throws SQLException {
         System.out.println("Available Publishers: ");
         System.out.println();
@@ -90,6 +133,17 @@ public class JDBCMain {
             System.out.print("Year Formed: " + yearFormed + "   ");
             System.out.print("Subject: " + subject);
             System.out.println();
+        }
+    }
+    
+    public static void showAllPublisherNames(ResultSet rs) throws SQLException {
+        System.out.println("Existing Publishers that published a book: ");
+        System.out.println();
+        while (rs.next()) {
+            //Retrieve by column name
+            String publisherName = rs.getString("PublisherName");
+            //Display values
+            System.out.println(publisherName);
         }
     }
     
@@ -127,6 +181,29 @@ public class JDBCMain {
             System.out.print("Year Published: " + yearPublished + "   ");
             System.out.print("Number of Pages: " + numberPages + "   ");
             System.out.println();
+        }
+    }
+    
+    public static void showSelectedBookData(ResultSet rs) throws SQLException {
+        boolean correctInput = false;
+        while(rs.next()) {
+            correctInput = true;
+            String groupName = rs.getString("GroupName");
+            String publisherName = rs.getString("PublisherName");
+            String bookTitle = rs.getString("BookTitle");
+            int yearPublished = rs.getInt("YearPublished");
+            int numberPages = rs.getInt("NumberPages");
+            
+            System.out.print("Group name: " + groupName + "   ");
+            System.out.print("Publisher Name: " + publisherName + "   ");
+            System.out.print("Book Title: " + bookTitle + "   ");
+            System.out.print("Year Published: " + yearPublished + "   ");
+            System.out.print("Number of Pages: " + numberPages + "   ");
+            System.out.println();
+        }
+        
+        if (!correctInput) {
+            System.out.println("Unable to show Book data because of nonexistant publisher");
         }
     }
     
@@ -198,10 +275,15 @@ public class JDBCMain {
         DB_URL = DB_URL + DBNAME + ";user="+ USER + ";password=" + PASS;
         
         String continues;
-        int selection;
+        String selection;
         String writingGroup;
         String publisherName;
         String bookTitle;
+        boolean found = false;
+        boolean unique = false;
+        String groupName;
+        String bookTitles;
+        int numRows;
         
         Connection conn = null; //initialize the connection
         Statement stmt = null;
@@ -217,17 +299,17 @@ public class JDBCMain {
             
             continues = "a";
             
-            while (continues != "q") {
+            while (!continues.equals("q")) {
                 showMenu();
                 System.out.println();
                 
                 String sql;
                 System.out.print("Choose your number selection: ");
-                selection = Integer.parseInt(in.nextLine());
+                selection = in.nextLine();
                 
                 switch(selection) {
                     // List All WritingGroups
-                    case(1):
+                    case("1"):
                         System.out.println();
                         stmt = conn.createStatement();
                         sql = "SELECT * FROM WritingGroup";
@@ -236,7 +318,7 @@ public class JDBCMain {
                         showAllWritingGroupData(rs);
                         break;
                     // List all the data for a group specified by the user
-                    case(2):
+                    case("2"):
                         System.out.println();
                         // Show all available Writing Groups for user to choose
                         stmt = conn.createStatement();
@@ -251,8 +333,8 @@ public class JDBCMain {
                         writingGroup = in.nextLine();
                         System.out.println();
                         sql = "SELECT * FROM WritingGroup "
-                                + "NATURAL JOIN Books "
-                                + "NATURAL JOIN Publishers "
+                                + "LEFT OUTER JOIN Books using (GroupName) "
+                                + "LEFT OUTER Publishers using (PublisherName) "
                                 + "WHERE GroupName = ?";
                         pstmt = conn.prepareStatement(sql);
                         pstmt.clearParameters();
@@ -264,7 +346,7 @@ public class JDBCMain {
                         
                         break;
                     // List all publishers    
-                    case(3):
+                    case("3"):
                         System.out.println();
                         stmt = conn.createStatement();
                         sql = "SELECT * FROM Publishers";
@@ -273,7 +355,7 @@ public class JDBCMain {
                         showAllPublishersData(rs);
                         break;
                     // List all the data for a pubisher specified by the user.
-                    case(4):
+                    case("4"):
                         System.out.println();
                         // Show all available Publishers for user to choose
                         stmt = conn.createStatement();
@@ -284,12 +366,12 @@ public class JDBCMain {
                         System.out.println();
                         
                         // Ask user to enter Publisher of choice and get subsequent info for request
-                        System.out.print("Please enter a writing group you would like information for: ");
+                        System.out.print("Please enter a publishing you would like information for: ");
                         publisherName = in.nextLine();
                         System.out.println();
-                        sql = "SELECT * FROM WritingGroup "
-                                + "NATURAL JOIN Books "
-                                + "NATURAL JOIN Publishers "
+                        sql = "SELECT * FROM Publishers "
+                                + "LEFT OUTER JOIN Books using (PublisherName) "
+                                + "LEFT OUTER WritingGroup using (GroupName) "
                                 + "WHERE PublisherName = ?";
                         pstmt = conn.prepareStatement(sql);
                         pstmt.clearParameters();
@@ -300,7 +382,7 @@ public class JDBCMain {
                         showSelectedData(rs);
                         break;    
                     // List all book titles
-                    case(5):
+                    case("5"):
                         System.out.println();
                         stmt = conn.createStatement();
                         sql = "SELECT * FROM Books";
@@ -309,7 +391,15 @@ public class JDBCMain {
                         showAllBooksData(rs);
                         break;
                     // List all the data for a single book specified by the user.
-                    case(6):
+                    case("6"):
+                        // Show all available WritingGroups for user to choose
+                        System.out.println();
+                        stmt = conn.createStatement();
+                        sql = "SELECT GroupName FROM WritingGroup";
+                        rs = stmt.executeQuery(sql);
+                        
+                        showWritingGroupNames(rs);
+                        System.out.println();
                         
                         System.out.println();
                         // Show all available Publishers for user to choose
@@ -320,28 +410,282 @@ public class JDBCMain {
                         showBookNames(rs);
                         System.out.println();
                         
+                        stmt = conn.createStatement();
+                        sql = "SELECT GroupName FROM WritingGroup";
+ 
+                        do {
+                            rs = stmt.executeQuery(sql);
+                            System.out.println();
+                            System.out.print("Please enter new Writing Group name: ");
+                            groupName = in.nextLine();
+                            System.out.println("GroupName: " + groupName);
+                            found = writingGroupFound(groupName, rs);
+                        }
+                        while(found == false);
+                        
+                        stmt = conn.createStatement();
+                        sql = "SELECT GroupName, BookTitle FROM Books";
+
+                        do {
+                            rs = stmt.executeQuery(sql);
+                            System.out.println();
+                            System.out.print("Please enter new Book Title: ");
+                            bookTitles = in.nextLine();
+                            unique = existingBook(groupName, bookTitles, rs);
+                        }
+                        while(unique == true);
+                        
                         // Ask user to enter Publisher of choice and get subsequent info for request
-                        System.out.print("Please enter a book you would like information for: ");
-                        bookTitle = in.nextLine();
-                        System.out.println();
                         sql = "SELECT * FROM WritingGroup "
-                                + "NATURAL JOIN Books "
-                                + "NATURAL JOIN Publishers "
+                                + "LEFT OUTER JOIN Books using (GroupName) "
+                                + "LEFT OUTER JOIN Publishers using (PublisherName) "
                                 + "WHERE BookTitle = ?";
                         pstmt = conn.prepareStatement(sql);
                         pstmt.clearParameters();
-                        pstmt.setString(1, bookTitle);
+                        pstmt.setString(1, bookTitles);
                         
                         rs = pstmt.executeQuery();
                         
                         showSelectedData(rs);
                         
                         break;  
-                    case(7):
+                    case("7"):
+                       
+                        String publisher;
+                        
+                        stmt = conn.createStatement();
+                        sql = "SELECT GroupName FROM WritingGroup";
+ 
+                        do {
+                            rs = stmt.executeQuery(sql);
+                            System.out.println();
+                            System.out.print("Please enter new Writing Group name: ");
+                            groupName = in.nextLine();
+                            System.out.println("GroupName: " + groupName);
+                            found = writingGroupFound(groupName, rs);
+                        }
+                        while(found == false);      
+                        
+                        stmt = conn.createStatement();
+                        sql = "SELECT PublisherName FROM Publishers"; 
+                        
+                        do {
+                            rs = stmt.executeQuery(sql);
+                            System.out.println();
+                            System.out.print("Please enter new Publisher name: ");
+                            publisher = in.nextLine();
+                            found = publisherFound(publisher, rs);
+                        }
+                        while(found == false);
+                        
+                        // can be same WritingGroup name but not an existing book title name
+                        stmt = conn.createStatement();
+                        sql = "SELECT GroupName, BookTitle FROM Books";
+
+                        do {
+                            rs = stmt.executeQuery(sql);
+                            System.out.println();
+                            System.out.print("Please enter new Book Title: ");
+                            bookTitles = in.nextLine();
+                            unique = existingBook(groupName, bookTitles, rs);
+                        }
+                        while(unique == false);
+
+                        // if groupName and bookTitle equals an interation of the loop then return true
+                        // but if not return false
+                        // method(groupName, bookTitle, rs);
+                        
+                        System.out.println();
+                        System.out.print("Please enter the year book was published: ");
+                        int yearPublished = Integer.parseInt(in.nextLine());
+                        
+                        System.out.println();
+                        System.out.print("Please enter the number of pages this book has: ");
+                        int numberPages = Integer.parseInt(in.nextLine());
+                        
+                        sql = "INSERT INTO Books (GroupName, BookTitle, PublisherName, YearPublished, NumberPages) VALUES (?,?,?,?,?)";
+                        pstmt = conn.prepareStatement(sql);
+                        pstmt.clearParameters();
+                        pstmt.setString(1, groupName);
+                        pstmt.setString(2, bookTitles);
+                        pstmt.setString(3, publisher);
+                        pstmt.setInt(4, yearPublished);
+                        pstmt.setInt(5, numberPages);
+                        
+                        numRows = pstmt.executeUpdate();
+                        System.out.println("Number of Rows affected:  + numRows");
+                        
+                        
                         break;
-                    case(8):
+                    case("8"):
+                        
+                        String pAddress;
+                        String pPhoneNumber;
+                        String pEmail;
+                        String newPublisher;
+                        
+                        stmt = conn.createStatement();
+                        sql = "SELECT PublisherName FROM Publishers"; 
+                        
+                        // validate input to get an existing one
+
+                        do {
+                            rs = stmt.executeQuery(sql);
+                            System.out.println();
+                            System.out.print("Please enter an existing Publisher name: ");
+                            publisher = in.nextLine();
+                            found = publisherFound(publisher, rs);
+                        }
+                        while(found == false);
+                        
+                        // validates user input so gets a publisher that doesn't exist so far
+                        do {
+                            rs = stmt.executeQuery(sql);
+                            System.out.println();
+                            System.out.print("Please enter a new Publisher name: ");
+                            newPublisher = in.nextLine();
+                            found = publisherFound(newPublisher, rs);
+                        }
+                        while(found == true);
+                        
+                        System.out.println();
+                        System.out.print("Please enter a new Publisher addy: ");
+                        pAddress = in.nextLine();
+                        
+                        System.out.println();
+                        System.out.print("Please enter a new Publisher phone number: ");
+                        pPhoneNumber = in.nextLine();
+                        
+                        System.out.println();
+                        System.out.print("Please enter a new Publisher email: ");
+                        pEmail = in.nextLine();
+                        
+                        
+                        // insert new user publisher into Publishers table
+                        sql = "INSERT INTO Publishers (PublisherName, PublisherAddress, PublisherPhone, PublisherEmail) VALUES (?,?,?,?)";
+                        pstmt = conn.prepareStatement(sql);
+                        pstmt.clearParameters();
+                        pstmt.setString(1, newPublisher);
+                        pstmt.setString(2, pAddress);
+                        pstmt.setString(3, pPhoneNumber);
+                        pstmt.setString(4, pEmail);
+                        
+                        numRows = pstmt.executeUpdate();
+                        System.out.println("Number of Rows affected: " + numRows);
+                        
+                        System.out.println();
+                        System.out.println("Books with old publisher name before adding new publishers");
+                        // show books of old publisher before adding new publishers
+                        sql = "SELECT * FROM Books "
+                                + "WHERE PublisherName = ?";
+                        pstmt = conn.prepareStatement(sql);
+                        pstmt.clearParameters();
+                        pstmt.setString(1, publisher);
+                        rs = pstmt.executeQuery();
+                        
+                        showSelectedBookData(rs);
+                        
+                        System.out.println("Replacing books");
+                        // replace books with old publisher name with the new publihser name that was just added
+                        sql = "UPDATE Books SET PublisherName = ? "
+                                + "WHERE PublisherName = ?";
+                        pstmt = conn.prepareStatement(sql);
+                        pstmt.clearParameters();
+                        pstmt.setString(1, newPublisher);
+                        pstmt.setString(2, publisher);
+                        numRows = pstmt.executeUpdate();
+                        System.out.println("Number of rows affected for replacing: " + numRows);
+                        
+                        System.out.println();
+                        System.out.println("Books with new publisher name after replaced the old publisher name");
+                        sql = "SELECT * FROM Books "
+                                + "WHERE PublisherName = ?";
+                        pstmt = conn.prepareStatement(sql);
+                        pstmt.clearParameters();
+                        pstmt.setString(1, newPublisher);
+                        rs = pstmt.executeQuery();
+                        
+                        showSelectedBookData(rs);
+                        
+                        System.out.println();
+                        stmt = conn.createStatement();
+                        sql = "SELECT PublisherName FROM Books";
+                        rs = stmt.executeQuery(sql);
+                        
+                        showAllPublisherNames(rs);
+ 
                         break;
-                    case(9):
+                    case("9"):
+                        
+                        System.out.println();
+                        stmt = conn.createStatement();
+                        sql = "SELECT GroupName FROM WritingGroup";
+                        rs = stmt.executeQuery(sql);
+                        
+                        showWritingGroupNames(rs);
+                        System.out.println();
+                        
+                        System.out.println();
+                        // Show all available Publishers for user to choose
+                        stmt = conn.createStatement();
+                        sql = "SELECT Booktitle FROM Books";
+                        rs = stmt.executeQuery(sql);
+                        
+                        showBookNames(rs);
+                        System.out.println();
+                        
+                        stmt = conn.createStatement();
+                        sql = "SELECT GroupName FROM WritingGroup";
+ 
+                        do {
+                            rs = stmt.executeQuery(sql);
+                            System.out.println();
+                            System.out.print("Please enter existing Writing Group name: ");
+                            groupName = in.nextLine();
+                            System.out.println("GroupName: " + groupName);
+                            found = writingGroupFound(groupName, rs);
+                        }
+                        while(found == false);
+                        
+                        stmt = conn.createStatement();
+                        sql = "SELECT GroupName, BookTitle FROM Books";
+
+                        do {
+                            rs = stmt.executeQuery(sql);
+                            System.out.println();
+                            System.out.print("Please enter existing Book Title: ");
+                            bookTitles = in.nextLine();
+                            unique = existingBook(groupName, bookTitles, rs);
+                        }
+                        while(unique == true);
+                        
+                        // Book table before deleting row
+                        System.out.println("Books table before deleting user selected book");
+                        stmt = conn.createStatement();
+                        sql = "SELECT * FROM Books";
+                        rs = stmt.executeQuery(sql);
+                        
+                        showAllBooksData(rs);
+                        
+                        sql = "DELETE FROM Books "
+                                + "WHERE GroupName = ? "
+                                + "AND BookTitle = ?";
+                        pstmt = conn.prepareStatement(sql);
+                        pstmt.clearParameters();
+                        pstmt.setString(1, groupName);
+                        pstmt.setString(2, bookTitles);
+                        numRows = pstmt.executeUpdate();
+                        System.out.println();
+                        System.out.println("Number of rows deleted: " + numRows);
+                        
+                        System.out.println();
+                        System.out.println("Books table after deleting user selected book");
+                        stmt = conn.createStatement();
+                        sql = "SELECT * FROM Books";
+                        rs = stmt.executeQuery(sql);
+                        
+                        showAllBooksData(rs);
+                        
                         break;
                     default:
                         System.out.println("Invalid selection");
