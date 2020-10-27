@@ -30,7 +30,6 @@ public class Books {
             gName = rs.getString("GroupName");
             bTitle = rs.getString("BookTitle");
             if (gName.equals(groupName) && bTitle.equals(bookTitle)) {
-                System.out.println("Group Name and Book Title already exist in database, please add another Book Title");
                 uniqueBook = false;
                 break;
             }

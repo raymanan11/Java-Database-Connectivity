@@ -167,7 +167,6 @@ public class JDBCMain {
                         wg.getAndShowGroupNames(stmt, conn);
                         System.out.println();
                         
-                        System.out.println();
                         // Show all available Publishers for user to choose
                         stmt = conn.createStatement();
                         books.getAndShowBookTitles(rs, stmt);
@@ -226,24 +225,6 @@ public class JDBCMain {
                         }
                         while(found == false);      
                        
-//                        //  add in a new publisher
-//                        stmt = conn.createStatement();
-//                        sql = "SELECT PublisherName FROM Publishers"; 
-     
-//                        System.out.println();
-//                        System.out.print("Please enter a new Publisher addy: ");
-//                        pAddress = in.nextLine();
-//                        
-//                        System.out.println();
-//                        System.out.print("Please enter a new Publisher phone number: ");
-//                        pPhoneNumber = in.nextLine();
-//                        
-//                        System.out.println();
-//                        System.out.print("Please enter a new Publisher email: ");
-//                        pEmail = in.nextLine();
-//                        
-//                        publishers.insertIntoPublishers(conn, publisher, pAddress, pPhoneNumber, pEmail);
-                        
                         // can be same WritingGroup name but not an existing book title name
                         stmt = conn.createStatement();
                         sql = "SELECT GroupName, BookTitle FROM Books";
@@ -254,6 +235,9 @@ public class JDBCMain {
                             System.out.print("Please enter new Book Title: ");
                             bookTitles = in.nextLine();
                             unique = books.existingBook(groupName, bookTitles, rs);
+                            if (!unique) {
+                                System.out.println("Group Name and Book Title already exist in database, please add another Book Title");
+                            }
                         }
                         while(unique == false);
                         
@@ -261,7 +245,8 @@ public class JDBCMain {
                         sql = "SELECT BookTitle, PublisherName FROM Books";
                         
                         // Asks the user to input an existing publisher
-                        // If title and publisher is already in the database, it will prompt user
+                        // First check if it's an existing publisher, if its not then exit
+                        // Then if title and publisher is already in the database, it will prompt user
                         // to add a publisher who is not mathcing
                         do {
                             rs = stmt.executeQuery(sql);
